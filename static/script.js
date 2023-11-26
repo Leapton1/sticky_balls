@@ -1,7 +1,8 @@
-const background_start = "{{url_for('static', filename='Background_start.png')}}";
-const background_middle = "{{url_for('static', filename='background_middle.png')}}";
-const background_end = "{{url_for('static', filename='background_end.png')}}";
-const end_screen = "{{url_for('static', filename='end_screen.png')}}";
+const background_start = "assets/Background_start.png";
+const background_middle = "assets/background_middle.png";
+const background_end = "assets/background_end.png";
+const end_screen = "assets/end_screen.png";
+
 function room_destructor() {
     current_room -= 1;
 }
@@ -19,12 +20,22 @@ function Ball(x, y, radius, e, mass, colour) {
     this.area = (Math.PI * radius * radius) / 10000; //m^2
 }
 
+function Rectangle(x, y, width, height, e, mass, colour) {
+    this.position = { x: x, y: y };
+    this.size = { width: width, height: height };
+    this.velocity = { x: 0, y: 0 };
+    this.e = -e;
+    this.mass = mass;
+    this.colour = colour;
+}
+
 function Room(generation = room_constructor()) {
     this.index = room_track
     room_track += 1;
     this.generation = generation;
     this.destruction = function () {
-        balls.splice(1, balls.length)
+        balls.splice(1, balls.length);
+        rects.splice(0, rects.length);
     }
 }
 
@@ -41,8 +52,9 @@ var mouse = { x: 0, y: 0, isDown: false };
 var ag = 9.81; //m/s^2 acceleration due to gravity on earth = 9.81 m/s^2. 
 var width = 0;
 var height = 0;
+var rects = [];
 var balls = [];
-// var density = 500;
+var density = 500;
 
 
 var setup = function () {
@@ -50,7 +62,6 @@ var setup = function () {
     ctx = canvas.getContext('2d');
     width = canvas.width;
     height = canvas.height;
-
     canvas.onmousedown = mouseDown;
     canvas.onmouseup = mouseUp;
     canvas.onmousemove = getMousePosition;
@@ -60,12 +71,6 @@ var setup = function () {
 var mouseDown = function (e) {
     if (e.which == 1) {
         getMousePosition(e);
-        var max = 255;
-        var min = 20;
-        var r = 75 + Math.floor(Math.random() * (max - min) - min);
-        var g = 75 + Math.floor(Math.random() * (max - min) - min);
-        var b = 75 + Math.floor(Math.random() * (max - min) - min);
-        // balls.push(new Ball(mouse.x, mouse.y, 10, 0.7,10, "rgb(" + r + "," + g + "," + b + ")"));
     }
 }
 
@@ -83,17 +88,15 @@ function getMousePosition(e) {
     mouse.y = e.pageY - canvas.offsetTop;
 }
 
+
 function loop() {
     // Create constants
     var gravity = document.getElementById("gravity");
-    var density = document.getElementById("density");
     var drag = document.getElementById("drag");
 
     // Clear window at the begining of every frame
     ctx.clearRect(0, 0, width, height);
     for (var i = 0; i < balls.length; i++) {
-
-
         // Rendering the ball
         ctx.beginPath();
         ctx.fillStyle = balls[i].colour;
@@ -112,28 +115,30 @@ function loop() {
         // Handling the ball collisions
 
     }
+
+    // Draw rectangles
+    for (var i = 0; i < rects.length; i++) {
+        ctx.beginPath();
+        ctx.fillStyle = rects[i].colour;
+        ctx.rect(rects[i].position.x, rects[i].position.y, rects[i].size.width, rects[i].size.height);
+        ctx.fill();
+        ctx.closePath();
+    }
+
     collisionWall(balls[0]);
+    collisionRect(balls[0]);
     collisionBall(balls[0]);
 
     if (!mouse.isDown) {
-        //physics - calculating the aerodynamic forces to drag
-        // -0.5 * Cd * A * v^2 * rho
-        var fx = -0.5 * drag.value * density.value * balls[0].area * balls[0].velocity.x * balls[0].velocity.x * (balls[0].velocity.x / Math.abs(balls[0].velocity.x));
-        var fy = -0.5 * drag.value * density.value * balls[0].area * balls[0].velocity.y * balls[0].velocity.y * (balls[0].velocity.y / Math.abs(balls[0].velocity.y));
-
+        let fx = -0.5 * drag.value * density * balls[0].area * balls[0].velocity.x * balls[0].velocity.x * (balls[0].velocity.x / Math.abs(balls[0].velocity.x));
+        let fy = -0.5 * drag.value * density * balls[0].area * balls[0].velocity.y * balls[0].velocity.y * (balls[0].velocity.y / Math.abs(balls[0].velocity.y));
         fx = (isNaN(fx) ? 0 : fx);
         fy = (isNaN(fy) ? 0 : fy);
         console.log(fx);
-        //Calculating the accleration of the ball
-        //F = ma or a = F/m
-        var ax = fx / balls[0].mass;
-        var ay = (ag * gravity.value) + (fy / balls[0].mass);
-
-        //Calculating the ball velocity 
+        let ax = fx / balls[0].mass;
+        let ay = (ag * gravity.value) + (fy / balls[0].mass);
         balls[0].velocity.x += ax * fps;
         balls[0].velocity.y += ay * fps;
-
-        //Calculating the position of the ball
         balls[0].position.x += balls[0].velocity.x * fps * 100;
         balls[0].position.y += balls[0].velocity.y * fps * 100;
     }
@@ -147,19 +152,20 @@ function loop() {
         rooms[current_room].generation();
     }
     // Switch to previous room
-    if (balls[0].position.y > 500 && current_room > 0) {
+    if (balls[0].position.y > 500 && current_room > 0 && current_room < room_track - 1) {
         balls[0].position.y = 50;
         rooms[current_room].destruction();
         current_room -= 1;
         rooms[current_room].generation();
     }
 
-    //Rendering Text
+    // Rendering Text
+    // 
     ctx.fillStyle = 'green';
     ctx.font = "11pt Arial";
     ctx.fillText("Number of Balls: " + balls.length, 0, 16);
     ctx.fillText("Drag Coefficient: " + drag.value, 0, 32);
-    ctx.fillText("Fluid Density: " + density.value + " kg/m^3", 0, 48);
+    ctx.fillText("Fluid Density: " + density + " kg/m^3", 0, 48);
     ctx.fillText("Acceleration due to gravity: " + gravity.value + " g", 0, 64);
     ctx.fillText("Room Width: " + width / 1000 + " m", 0, 80);
     ctx.fillText("Room Height: " + height / 1000 + " m", 0, 96);
@@ -167,6 +173,22 @@ function loop() {
     ctx.fillText("Mouse Y: " + mouse.y, 0, 128);
     ctx.fillText("Total Rooms: " + room_track, 0, 144);
     ctx.fillText("Current Room: " + (current_room + 1), 0, 160);
+
+    // Leaderboard
+    if (leaderboard != null && current_room == 0) {
+        ctx.fillStyle = 'black';
+        ctx.font = "16px Arial";
+        ctx.fillText("1:  " + JSONleaderboard[0]['name'], 370, 250) 
+        ctx.fillText(" Score:  " +JSONleaderboard[0]['score'], 600, 250);
+        ctx.fillText("2:  " + JSONleaderboard[1]['name'], 370, 266)
+        ctx.fillText(" Score:  " +JSONleaderboard[1]['score'], 600, 266);
+        ctx.fillText("3:  " + JSONleaderboard[2]['name'], 370, 282);
+        ctx.fillText(" Score:  " +JSONleaderboard[2]['score'], 600, 282);
+        ctx.fillText("4:  " + JSONleaderboard[3]['name'], 370, 298);
+        ctx.fillText(" Score:  " +JSONleaderboard[3]['score'], 600, 298);
+        ctx.fillText("5:  " + JSONleaderboard[4]['name'], 370, 314);
+        ctx.fillText(" Score:  " +JSONleaderboard[4]['score'], 600, 314);
+    }
 }
 
 function collisionWall(ball) {
@@ -189,6 +211,43 @@ function collisionWall(ball) {
         ball.velocity.y *= ball.e;
         ball.position.y = ball.radius;
         mouse.isDown = true;
+    }
+}
+
+function collisionRect(ball) {
+    for (var i = 0; i < rects.length; i++) {
+        if (ball.position.y + ball.radius > rects[i].position.y
+            && ball.position.y - ball.radius < rects[i].position.y + rects[i].size.height
+            && ball.position.x + ball.radius > rects[i].position.x
+            && ball.position.x - ball.radius < rects[i].position.x + rects[i].size.width) {
+
+            // Figure out closest side
+            let dists = [Math.abs(ball.position.x - rects[i].position.x),
+            Math.abs(ball.position.x - (rects[i].position.x + rects[i].size.width)),
+            Math.abs(ball.position.y - rects[i].position.y),
+            Math.abs(ball.position.y - (rects[i].position.y + rects[i].size.height))];
+
+            switch (dists.indexOf(Math.min.apply(Math, dists))) {
+                case 0:
+                    ball.position.x = rects[i].position.x - ball.radius;
+                    ball.velocity.x *= ball.e;
+                    break;
+                case 1:
+                    ball.velocity.x *= ball.e;
+                    ball.position.x = rects[i].position.x + rects[i].size.width + ball.radius;
+                    break;
+                case 2:
+                    ball.velocity.y *= ball.e;
+                    ball.position.y = rects[i].position.y - ball.radius;
+                    mouse.isDown = true;
+                    break;
+                case 3:
+                    ball.velocity.y *= ball.e;
+                    ball.position.y = rects[i].position.y + rects[i].size.height + ball.radius;
+                    break;
+                default:
+            }
+        }
     }
 }
 
@@ -257,13 +316,57 @@ rooms.push(
     new Room(
         function () {
             $(canvas).css("background-image", "url(" + background_start + ")")
-            balls.push(new Ball(200, 500, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-            balls.push(new Ball(375, 390, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-            balls.push(new Ball(180, 310, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-            balls.push(new Ball(340, 150, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-            balls.push(new Ball(150, 55, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            // balls.push(new Ball(200, 500, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            // balls.push(new Ball(375, 390, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            // balls.push(new Ball(180, 310, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            // balls.push(new Ball(340, 150, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            // balls.push(new Ball(150, 55, 20, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            rects.push(new Rectangle(100, 500, 200, 20, 0.7, 10, '#222222'));
+            rects.push(new Rectangle(600, 400, 200, 20, 0.7, 10, '#222222'));
+            rects.push(new Rectangle(100, 300, 200, 20, 0.7, 10, '#222222'));
+            rects.push(new Rectangle(600, 200, 200, 20, 0.7, 10, '#222222'));
+            rects.push(new Rectangle(100, 100, 200, 20, 0.7, 10, '#222222'));
         })
 )
+
+// Procedural Generation Test
+/* Concept:
+    Divide screen vertically into 10 stacked layers
+    each layer will be given 50 pixels vertically and the full horizontal width 
+    to decide whether or not a platform should be placed there
+    Platforms can have a width of between 50 and 250
+*/
+var procedural_rooms = [];
+var procedural_rooms_counter = 0;
+
+const rooms_to_generate = 4;
+
+for (let j = 0; j < rooms_to_generate; j++) {
+    var procedural_platx = []
+    var procedural_platwidth = []
+
+    for (let i = 0; i < 8; i++) {
+        procedural_platx.push(Math.floor(Math.random() * 600))
+        procedural_platwidth.push(Math.floor(Math.random() * 200) + 50)
+    }
+    procedural_rooms.push([procedural_platx, procedural_platwidth])
+}
+
+for (let j = 0; j < rooms_to_generate; j++) {
+    rooms.push(
+        new Room(
+            function () {
+                $(canvas).css("background-image", "url(" + background_middle + ")")
+                for (let layer = 0; layer < 550; layer += 50) {
+                    platx = procedural_rooms[current_room - 1][0][Math.floor(layer / 50)]
+                    platwidth = procedural_rooms[current_room - 1][1][Math.floor(layer / 50)]
+                    if (platx + platwidth > 1000) { platwidth = 0; }
+                    rects.push(new Rectangle(platx, layer, platwidth, 20, 0.7, 10, '#222222'));
+                }
+                rects.push(new Rectangle(600 - (current_room * 50), 500, 200, 20, 0.7, 10, '#222222'));
+            })
+    )
+}
 
 // Room 1
 rooms.push(
@@ -283,30 +386,17 @@ rooms.push(
         })
 )
 
-// Room 2
-rooms.push(
-    new Room(
-        function () {
-            $(canvas).css("background-image", "url(" + background_middle + ")")
-            balls.push(new Ball(400, 200, 10, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-        })
-)
-
-// Room 3
-rooms.push(
-    new Room(
-        function () {
-            $(canvas).css("background-image", "url(" + background_middle + ")")
-            balls.push(new Ball(700, 420, 10, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
-        })
-)
-
-// Penultimate Room
 rooms.push(
     new Room(
         function () {
             $(canvas).css("background-image", "url(" + background_end + ")")
-            balls.push(new Ball(290, 210, 10, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+            for (let layer = 0; layer < 550; layer += 50) {
+                platx = procedural_platx[Math.floor(layer / 50)]
+                platwidth = procedural_platwidth[Math.floor(layer / 50)]
+                if (platx + platwidth > 1000) { platwidth = layer > 450 ? platwidth : 0 }
+                rects.push(new Rectangle(platx, layer, platwidth, 20, 0.7, 10, '#222222'));
+            }
+            rects.push(new Rectangle(600, 500, 200, 20, 0.7, 10, '#222222'));
         })
 )
 
@@ -314,7 +404,7 @@ rooms.push(
 let final_room = new Room(
     function () {
         $(canvas).css("background-image", "url(" + end_screen + ")");
-        balls.push(new Ball(350, 400, 10, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + ")"));
+        rects.push(new Rectangle(0, 525, 990, 25, 0.7, 10, "#e5d5ba"));
 
     }
 )
@@ -331,3 +421,18 @@ balls.push(new Ball(70, 540, 10, 0.7, 10, "rgb(" + 50 + "," + 50 + "," + 200 + "
 // Generate room
 rooms[0].generation();
 
+// Do other things
+const xhr = new XMLHttpRequest();
+var leaderboard;
+var JSONleaderboard;
+xhr.open('GET', '/getleaderboard');
+xhr.send();
+xhr.onload = () => {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+        leaderboard = xhr.response;
+        JSONleaderboard = JSON.parse(leaderboard);
+        console.log(leaderboard);
+    } else {
+        console.log("Error retrieving leaderboard");
+    }
+}
