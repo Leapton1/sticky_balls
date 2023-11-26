@@ -58,7 +58,7 @@ var width = 0;
 var height = 0;
 var rects = [];
 var balls = [];
-var density = 500;
+var density = 100;
 
 
 var setup = function () {
