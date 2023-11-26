@@ -162,7 +162,6 @@ function loop() {
         current_room -= 1;
         rooms[current_room].generation();
     }
-    density = 0;
     // Leaderboard
     if (leaderboard != null && current_room == 0) {
         ctx.fillStyle = 'black';
@@ -328,7 +327,7 @@ rooms.push(
 var procedural_rooms = [];
 var procedural_rooms_counter = 0;
 
-const rooms_to_generate = 1;
+const rooms_to_generate = 4;
 
 for (let j = 0; j < rooms_to_generate; j++) {
     var procedural_platx = []
