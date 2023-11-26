@@ -162,22 +162,7 @@ function loop() {
         current_room -= 1;
         rooms[current_room].generation();
     }
-
-    // Rendering Text
-    // 
-    ctx.fillStyle = 'green';
-    ctx.font = "11pt Arial";
-    ctx.fillText("Number of Balls: " + balls.length, 0, 16);
-    ctx.fillText("Drag Coefficient: " + drag.value, 0, 32);
-    ctx.fillText("Fluid Density: " + density + " kg/m^3", 0, 48);
-    ctx.fillText("Acceleration due to gravity: " + gravity.value + " g", 0, 64);
-    ctx.fillText("Room Width: " + width / 1000 + " m", 0, 80);
-    ctx.fillText("Room Height: " + height / 1000 + " m", 0, 96);
-    ctx.fillText("Mouse X: " + mouse.x, 0, 112);
-    ctx.fillText("Mouse Y: " + mouse.y, 0, 128);
-    ctx.fillText("Total Rooms: " + room_track, 0, 144);
-    ctx.fillText("Current Room: " + (current_room + 1), 0, 160);
-
+    density = 0;
     // Leaderboard
     if (leaderboard != null && current_room == 0) {
         ctx.fillStyle = 'black';
@@ -411,8 +396,7 @@ let final_room = new Room(
         rects.push(new Rectangle(0, 525, 990, 25, 0.7, 10, "#e5d5ba"));
         let time = new Date().getTime();
         var score = 100000-(now - time);
-        alert(score)
-        let msg = prompt("Congratulations! You beat Sticky Balls, enter your name to put your score into the leaderboard.")
+        let msg = prompt("Congratulations! You beat Sticky Balls and earned "+score+" enter your name to put your score into the leaderboard.")
         sendinfo([msg, score]);
     }
 )
