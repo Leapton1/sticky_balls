@@ -1,4 +1,11 @@
-
+var background_start = 'static/Background_start.png';
+var background_middle = 'static/background_middle.png';
+var background_end = 'static/background_top.png';
+var end_screen = 'static/sunset_screen.png';
+// var background_start = document.getElementById("img1").getElementsByTagName('img');
+// var background_middle = document.getElementById("img2").getElementsByTagName('img');
+// var background_end = document.getElementById("img3").getElementsByTagName('img');
+// var end_screen = document.getElementById("img4").getElementsByTagName('img');
 
 function room_destructor() {
     current_room -= 1;
@@ -336,7 +343,7 @@ rooms.push(
 var procedural_rooms = [];
 var procedural_rooms_counter = 0;
 
-const rooms_to_generate = 4;
+const rooms_to_generate = 1;
 
 for (let j = 0; j < rooms_to_generate; j++) {
     var procedural_platx = []
@@ -402,7 +409,11 @@ let final_room = new Room(
     function () {
         $(canvas).css("background-image", "url(" + end_screen + ")");
         rects.push(new Rectangle(0, 525, 990, 25, 0.7, 10, "#e5d5ba"));
-
+        let time = new Date().getTime();
+        var score = 100000-(now - time);
+        alert(score)
+        let msg = prompt("Congratulations! You beat Sticky Balls, enter your name to put your score into the leaderboard.")
+        sendinfo([msg, score]);
     }
 )
 
@@ -422,6 +433,7 @@ rooms[0].generation();
 const xhr = new XMLHttpRequest();
 var leaderboard;
 var JSONleaderboard;
+var now;
 xhr.open('GET', '/getleaderboard');
 xhr.send();
 xhr.onload = () => {
@@ -429,6 +441,7 @@ xhr.onload = () => {
         leaderboard = xhr.response;
         JSONleaderboard = JSON.parse(leaderboard);
         console.log(leaderboard);
+        now = new Date().getTime();
     } else {
         console.log("Error retrieving leaderboard");
     }
