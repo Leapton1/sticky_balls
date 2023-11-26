@@ -2,7 +2,7 @@ var background_start = "{{url_for('static', filename='Background_start.png')}}";
 
 var background_middle = "{{url_for('static', filename='background_middle.png')}}";
 
-var background_end = "{{url_for('static', filename='background_end.png')}}";
+var background_end = "{{url_for('static', filename='background_top.png')}}";
 
 var end_screen = "{{url_for('static', filename='assets/end_screen.png')}}";
 
